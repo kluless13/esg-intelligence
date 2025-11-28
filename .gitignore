@@ -1,3 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyd
+*.so
+*.dylib
+.eggs/
+*.egg-info/
+dist/
+build/
+.cache/
+.mypy_cache/
+.pytest_cache/
+
+# Virtual envs
+venv/
+.venv/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# OS / Editor
+.DS_Store
+.idea/
+.vscode/
+*.code-workspace
+.cursor/
+
+# Data artifacts (keep companies.csv tracked)
+data/esg_intel.db
+data/pdfs/
+data/*.sqlite
+data/*.db
+data/*.log
+
+# Playwright/Test artifacts
+playwright/.cache/
+test-results/
+blob-report/
+.playwright/
+
 # Environment
 .env
 venv/

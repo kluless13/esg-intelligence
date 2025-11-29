@@ -1,334 +1,315 @@
 # ESG Intelligence Platform
 
-AI-powered system to discover, extract, and analyze ESG/sustainability data from public companies worldwide. Identifies high-priority renewable energy sales prospects using Claude AI.
+AI-powered system to discover, extract, and analyze ESG/sustainability data from ASX companies. Identifies high-priority renewable energy sales prospects using Claude AI.
 
 ## Project Status
 
-### ✅ Milestone 1: Project Setup & Company Import - COMPLETE
-
-- [x] Project structure created
-- [x] Database initialized with schema
-- [x] 2,239 ASX companies imported from CSV
-- [x] Database queries working
-
-### ✅ Milestone 2: Find ESG Documents - COMPLETE
-
-- [x] ListCorp scraper with Playwright + stealth mode
-- [x] ESG document detection (sustainability reports, annual reports)
-- [x] Documents saved to database
-
-### ✅ Milestone 3: Extract Text from Documents - COMPLETE
-
-- [x] Docling integration (IBM's AI-powered extraction)
-- [x] 97.9% table accuracy on sustainability reports!
-- [x] Fallback to BeautifulSoup/PyMuPDF
-- [x] 27 documents successfully extracted (96.4% success rate)
-- [x] Average document length: ~25k characters
-
-### ✅ Milestone 4: AI-Powered ESG Data Extraction - COMPLETE
-
-- [x] Claude API integration for structured data extraction
-- [x] 27 documents analyzed from 6 companies
-- [x] Extracted emissions, targets, renewable energy, commitments
-- [x] Total cost: ~$0.78 for all documents
-- [x] Found meaningful ESG data (XRO: net-zero by 2050, SBTi targets set)
-
-### 📋 Next Steps
-
-- **Milestone 5**: Prospect scoring algorithm
-- **Milestone 6**: Streamlit dashboard
+| Milestone | Status | Description |
+|-----------|--------|-------------|
+| 1. Setup & Import | ✅ COMPLETE | 2,239 ASX companies imported |
+| 2a. ListCorp Scraper | ✅ COMPLETE | Find docs via ASX announcements |
+| 2b. Website Crawler | ✅ **COMPLETE** | Find docs on company websites (sitemap fix 2025-11-29) |
+| 3. Text Extraction | ✅ COMPLETE | Docling integration (97.9% table accuracy) |
+| 4. AI Analysis | ✅ COMPLETE | Claude extracts ESG metrics |
+| 5. Prospect Scoring | 🔄 **NEXT** | Calculate sales priority scores |
+| 6. Dashboard | 📋 TODO | Streamlit visualization |
 
 ---
 
-## 🚨 Critical Limitation & Improved Data Sourcing Strategy
+## 🚨 The Problem & Solution
 
 ### Current Limitation
 
-**The current approach (scraping ListCorp news pages) has major limitations:**
+The ListCorp scraper (Milestone 2a) only finds **~25% of sustainability reports** because:
+- Most companies publish reports on their **own websites**, not ASX announcements
+- Many ESG reports are standalone PDFs on investor relations pages
+- Small companies don't file sustainability reports to ASX at all
 
-❌ **Only finds ~25% of sustainability reports**
-- Most companies publish sustainability reports on their own websites, NOT as stock exchange announcements
-- ListCorp is ASX-only (can't scale to NASDAQ, NYSE, LSE, etc.)
-- Many ESG reports are standalone PDFs, not embedded in news announcements
+### Solution: Website Crawler (Milestone 2b)
 
-**Evidence from our data:**
-- 6 companies scraped → Only 2 have meaningful ESG data (33%)
-- XRO mentions "Climate Appendix on website" - not in ListCorp
-- Small companies (biotech/pharma) don't file sustainability reports to ASX
-
-### ✅ Improved Strategy: Search Engine Discovery
-
-**New architecture for global scalability:**
+Crawl company websites directly using a 4-step approach:
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│ STEP 1: Get Company List (Exchange-Agnostic)           │
-├─────────────────────────────────────────────────────────┤
-│ • ASX: ListCorp company list (existing)                │
-│ • NASDAQ/NYSE: SEC Edgar API, Yahoo Finance            │
-│ • LSE: London Stock Exchange API                       │
-│ • Any exchange: Wikipedia lists, OpenCorporates        │
-└─────────────────────────────────────────────────────────┘
-                          ↓
-┌─────────────────────────────────────────────────────────┐
-│ STEP 2: Search Engine Discovery (NEW!)                 │
-├─────────────────────────────────────────────────────────┤
-│ For each company, run targeted searches:               │
-│                                                         │
-│ Google/Bing queries:                                   │
-│ • "sustainability report [company] 2024 filetype:pdf"  │
-│ • "[company] ESG report 2024"                          │
-│ • "[company] climate disclosure TCFD"                  │
-│ • "[company] annual report 2024 environment"           │
-│ • "site:[company-domain] sustainability"               │
-│                                                         │
-│ Parse search results → Extract PDF/HTML URLs           │
-└─────────────────────────────────────────────────────────┘
-                          ↓
-┌─────────────────────────────────────────────────────────┐
-│ STEP 3: Document Download & Extraction                 │
-├─────────────────────────────────────────────────────────┤
-│ • Download PDF/HTML documents                          │
-│ • Extract text with Docling (WORKING GREAT! ✓)        │
-│ • Store in documents table                             │
-└─────────────────────────────────────────────────────────┘
-                          ↓
-┌─────────────────────────────────────────────────────────┐
-│ STEP 4: AI Analysis & Scoring                          │
-├─────────────────────────────────────────────────────────┤
-│ • Claude extracts ESG metrics (WORKING GREAT! ✓)      │
-│ • Calculate prospect scores                            │
-│ • Generate insights                                    │
-└─────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│ Step A: Get Company Website URL                             │
+├─────────────────────────────────────────────────────────────┤
+│ • We already have 2,239 companies in database (from CSV)    │
+│ • Discover website via:                                     │
+│   1. Try common patterns: {ticker}.com, {ticker}.com.au    │
+│   2. Google search: "{company name}" official website       │
+│ • Store in database (new 'website' column in companies)     │
+│ • Example: XRO → xero.com, BHP → bhp.com                   │
+└─────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────┐
+│ Step B: Discover All URLs on Company Website                │
+├─────────────────────────────────────────────────────────────┤
+│ • Check robots.txt → find sitemap.xml                       │
+│ • Parse sitemap.xml → get all page URLs                     │
+│ • If no sitemap, crawl key sections:                        │
+│   /investors, /sustainability, /about, /esg, /governance   │
+└─────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────┐
+│ Step C: Filter for ESG/Sustainability URLs                  │
+├─────────────────────────────────────────────────────────────┤
+│ Keywords in URL path or page title:                         │
+│ • sustainability, esg, climate, environment, carbon         │
+│ • annual-report, investor, governance, tcfd, emissions      │
+│ • net-zero, renewable, energy, ghg, scope-1, scope-2       │
+└─────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────┐
+│ Step D: Extract Report Links from Filtered Pages            │
+├─────────────────────────────────────────────────────────────┤
+│ • Visit each filtered URL                                   │
+│ • Find PDF/XLSX download links on page                      │
+│ • Filter for report keywords in link text/filename          │
+│ • Save to documents table with source='website'            │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-### Implementation Plan
+### Expected Improvement
 
-#### Phase 1: Search Engine Integration (Priority)
-
-Create `scripts/02b_find_via_search.py`:
-
-```python
-"""
-Find sustainability reports using search engines.
-Much more effective than relying on stock exchange announcements.
-"""
-
-def search_for_reports(company_name, ticker, year=2024):
-    """
-    Use Google/Bing to find sustainability reports.
-
-    Search queries:
-    1. "sustainability report {company_name} {year} filetype:pdf"
-    2. "{company_name} ESG report {year}"
-    3. "{ticker} climate disclosure TCFD {year}"
-    4. "{company_name} annual report {year} environment"
-    5. "site:{company_domain} sustainability OR ESG"
-
-    Returns:
-        List of (url, title, source) tuples
-    """
-    pass
-
-# Libraries to use:
-# - googlesearch-python (simple Google search)
-# - SerpAPI (professional, paid, more reliable)
-# - Bing Search API (Microsoft, paid)
-# - DuckDuckGo (free, no API key needed)
-```
-
-**Advantages:**
-✅ Works for ANY stock exchange globally
-✅ Finds reports on company websites (where they usually are)
-✅ Can target specific document types (PDF, HTML)
-✅ More comprehensive coverage
-
-**Challenges:**
-⚠️ Rate limits (need to throttle requests)
-⚠️ Some search APIs cost money (SerpAPI ~$50/month)
-⚠️ Need to filter out irrelevant results
-
-#### Phase 2: Multi-Exchange Company Lists
-
-Update `scripts/01_import_companies.py` to support multiple exchanges:
-
-```python
-def get_nasdaq_companies():
-    """Get NASDAQ company list from SEC Edgar or nasdaq.com"""
-    pass
-
-def get_nyse_companies():
-    """Get NYSE company list"""
-    pass
-
-def get_lse_companies():
-    """Get London Stock Exchange companies"""
-    pass
-
-# Database schema update:
-# Add 'exchange' column to companies table
-# ALTER TABLE companies ADD COLUMN exchange TEXT DEFAULT 'ASX';
-```
-
-#### Phase 3: Company Website Discovery
-
-Many companies have predictable URL patterns:
-
-```python
-def guess_company_domain(company_name, ticker):
-    """
-    Try to find company's official website.
-
-    Common patterns:
-    - {ticker.lower()}.com
-    - {company-name-slugified}.com
-    - www.{ticker}.com.au (ASX)
-
-    Verification:
-    - Check if domain exists (DNS lookup)
-    - Verify it's the right company (look for ticker/name on page)
-    """
-    pass
-```
-
-Then search directly on their site:
-```
-site:xero.com sustainability report
-site:bhp.com climate disclosure
-```
-
-### Recommended Tools & APIs
-
-| Tool | Cost | Purpose | Notes |
-|------|------|---------|-------|
-| **SerpAPI** | $50/mo | Google search API | Most reliable, handles captchas |
-| **DuckDuckGo** | Free | Search without API key | Good for prototyping |
-| **googlesearch-python** | Free | Unofficial Google scraping | May get blocked |
-| **Bing Search API** | Pay-per-use | Microsoft's search | Good alternative to Google |
-| **SEC Edgar API** | Free | US company filings | NASDAQ/NYSE companies |
-| **OpenCorporates API** | Free tier | Global company data | Company domain lookup |
-
-### Search Query Templates
-
-For best results, use these search patterns:
-
-```python
-SEARCH_QUERIES = {
-    "sustainability_pdf": '"{company}" sustainability report {year} filetype:pdf',
-    "esg_report": '"{company}" ESG report {year}',
-    "climate_disclosure": '"{ticker}" climate disclosure TCFD {year}',
-    "annual_report_env": '"{company}" annual report {year} environment emissions',
-    "company_site": 'site:{domain} (sustainability OR ESG OR climate OR "net zero")',
-    "cdp_disclosure": '"{company}" CDP climate change {year}',
-    "gri_report": '"{company}" GRI sustainability {year}',
-}
-
-# Year variations (try multiple years if current year not found)
-YEARS_TO_TRY = [2024, 2023, 2022, 2021]
-```
-
-### Modified Pipeline Flow
-
-**OLD (ListCorp only):**
-```
-Companies → ListCorp news → Extract text → Analyze
-          ↓
-      Limited to ASX, low success rate
-```
-
-**NEW (Search-based):**
-```
-Companies → Search engines → Download docs → Extract text → Analyze
-          ↓                 ↓
-      Any exchange    High success rate (find reports wherever they are)
-```
-
-### Success Metrics Target
-
-With search-based discovery, we should achieve:
-
-| Metric | Current (ListCorp) | Target (Search) |
-|--------|-------------------|-----------------|
+| Metric | ListCorp Only | + Website Crawler |
+|--------|---------------|-------------------|
 | Document discovery rate | 25-30% | **80-90%** |
-| Companies with ESG data | 2 out of 6 (33%) | **70%+** |
-| Supported exchanges | ASX only | **Global** |
-| Documents per company | 1-5 | **5-10** (multi-year) |
+| Companies with ESG data | 33% | **70%+** |
+| Documents per company | 1-5 | **5-15** (multi-year) |
+
+### Real Examples Found
+
+**Xero (XRO) - xero.com:**
+- ✅ **19,053 URLs** discovered from sitemap (all country sites)
+- ✅ **772 ESG-related URLs** filtered
+- ✅ **8 reports** extracted including:
+  - "Xero Sustainability Report 2025 (PDF)"
+  - "Continuous Disclosure Policy"
+  - Cross-domain support: brandfolder.xero.com
+
+**BHP - bhp.com:**
+- ✅ **13,931 URLs** discovered from sitemap (English + Spanish)
+- ✅ Previously blocked (403 errors) - **now working** with ultimate-sitemap-parser
+- ✅ Supports nested sitemaps and .gz compression
 
 ---
 
 ## 🤖 Claude Code Prompts
 
-Copy-paste these prompts to Claude Code to continue development.
+Copy-paste these prompts to continue development.
 
-### Install New Dependencies
+---
 
-```
-Install the new requirements including Docling. Run:
-pip install -r requirements.txt
-
-Then verify Docling is installed:
-python -c "from docling.document_converter import DocumentConverter; print('Docling OK')"
-```
-
-### Run Milestone 3: Extract Text (Test)
+### 🔥 BUILD: Website Crawler (Milestone 2b) - PRIORITY
 
 ```
-Run the text extraction script on 5 documents to test:
-python scripts/03_extract_text.py --limit 5
+I need to build a website crawler to find ESG reports on company websites. This is MORE EFFECTIVE than scraping ListCorp announcements.
 
-The first run will download Docling's AI models (~1-2GB). This is normal and only happens once.
+The 4-step approach:
 
-Show me the results and any errors.
-```
+STEP A - Get company website URL:
+- We already have 2,239 companies in the database from CSV - NO NEED to scrape ListCorp!
+- Discover website by trying common URL patterns:
+  1. {ticker.lower()}.com (e.g., "xro" → xro.com - doesn't exist, but "bhp" → bhp.com works)
+  2. {ticker.lower()}.com.au (common for ASX companies)
+  3. Google search "{company name}" official website (fallback)
+- Verify URL is valid (returns 200, contains company name/ticker)
+- Add 'website' column to companies table if it doesn't exist
+- Store the domain (e.g., "xero.com", "bhp.com")
 
-### Run Milestone 3: Extract Text (Full)
+STEP B - Discover all URLs on the website:
+- First check {domain}/robots.txt for sitemap location
+- Parse sitemap.xml to get all URLs
+- If no sitemap, crawl these common paths:
+  /investors, /sustainability, /about, /esg, /governance,
+  /corporate, /responsibility, /environment, /annual-reports
 
-```
-Run text extraction on all documents that haven't been processed yet:
-python scripts/03_extract_text.py --skip-existing
+STEP C - Filter for ESG-related URLs:
+- Filter URLs containing keywords: sustainability, esg, climate, 
+  environment, carbon, emissions, tcfd, annual-report, governance,
+  net-zero, renewable, ghg, scope
 
-This may take a while. Show me progress and the final summary.
-```
-
-### Check Extraction Status
-
-```
-Show me the extraction status of documents in the database:
-sqlite3 data/esg_intel.db "SELECT extraction_status, COUNT(*), SUM(char_count) as total_chars FROM documents GROUP BY extraction_status;"
-
-Also show me 5 example extracted documents:
-sqlite3 data/esg_intel.db "SELECT c.ticker, d.title, d.char_count, d.table_count, d.extraction_method FROM documents d JOIN companies c ON d.company_id = c.id WHERE d.extraction_status = 'success' LIMIT 5;"
-```
-
-### Find More ESG Documents
-
-```
-Find ESG documents for more companies (run this in background if needed):
-python scripts/02_find_esg_docs.py --limit 200 --skip-existing
-
-Show me how many documents we have now:
-sqlite3 data/esg_intel.db "SELECT COUNT(*) FROM documents;"
-```
-
-### Build Milestone 4: AI Data Extraction
-
-```
-I'm ready for Milestone 4. Create the AI-powered ESG data extraction.
+STEP D - Extract report links from those pages:
+- Visit each filtered URL
+- Find all PDF and XLSX links on the page
+- Filter for report-related filenames/link text
+- Save to documents table with source='website' (vs source='listcorp')
 
 Please create:
-1. src/analyzer/llm_extractor.py - Claude API integration to extract structured ESG data
-2. scripts/04_analyze_with_ai.py - Script to run extraction
+1. src/scraper/company_website.py - The crawler module with functions for each step
+2. scripts/02b_find_via_website.py - Script to run the crawler
 
-The extractor should:
-- Take document text and extract: emissions (scope 1,2,3), renewable energy %, targets, SBTi status, PPA mentions
-- Return structured JSON matching the esg_data table schema
-- Include a --dry-run flag to estimate API costs before running
-- Handle long documents by chunking or summarizing
+Database changes needed:
+- ALTER TABLE companies ADD COLUMN website TEXT;
+- ALTER TABLE documents ADD COLUMN source TEXT DEFAULT 'listcorp';
 
-Use the extraction prompt from blueprint.md as a starting point.
+The script should support:
+--ticker XRO        # Test with single company
+--limit 10          # Process N companies
+--skip-existing     # Skip companies that already have website docs
+-v                  # Verbose output
 
-Test with: python scripts/04_analyze_with_ai.py --dry-run --limit 5
+Test with: python scripts/02b_find_via_website.py --ticker XRO -v
+
+Use Playwright with stealth mode (like the existing ListCorp scraper).
 ```
+
+---
+
+### Check Current Database Stats
+
+```
+Give me a full status report on the database:
+
+sqlite3 data/esg_intel.db "
+SELECT '=== COMPANIES ===' as section;
+SELECT COUNT(*) as total_companies FROM companies;
+SELECT COUNT(*) as companies_with_website FROM companies WHERE website IS NOT NULL;
+
+SELECT '=== DOCUMENTS ===' as section;
+SELECT COUNT(*) as total_documents FROM documents;
+SELECT source, COUNT(*) as count FROM documents GROUP BY source;
+SELECT document_type, COUNT(*) as count FROM documents GROUP BY document_type;
+
+SELECT '=== EXTRACTION ===' as section;
+SELECT extraction_status, COUNT(*) as count FROM documents GROUP BY extraction_status;
+
+SELECT '=== ESG DATA ===' as section;
+SELECT COUNT(*) as total_esg_records FROM esg_data;
+SELECT COUNT(DISTINCT company_id) as companies_with_esg_data FROM esg_data;
+"
+```
+
+---
+
+### Test Website Crawler on Single Company
+
+```
+Test the website crawler on Xero (XRO):
+
+python scripts/02b_find_via_website.py --ticker XRO -v
+
+Expected output:
+- Find xero.com from ListCorp page
+- Discover sitemap or crawl /investors, /sustainability
+- Find URLs containing sustainability/esg keywords
+- Extract PDF links from those pages
+- Show found documents
+
+Then check what was saved:
+sqlite3 data/esg_intel.db "SELECT title, url, source FROM documents WHERE company_id = (SELECT id FROM companies WHERE ticker = 'XRO') ORDER BY source;"
+```
+
+---
+
+### Run Website Crawler on Top 50 Companies
+
+```
+Run the website crawler on the top 50 ASX companies by market cap:
+
+python scripts/02b_find_via_website.py --limit 50 --skip-existing
+
+Show me:
+1. How many companies were processed
+2. How many new documents were found
+3. Any errors encountered
+4. Comparison: documents from ListCorp vs website crawler
+```
+
+---
+
+### Extract Text from New Documents
+
+```
+Extract text from all newly found website documents:
+
+python scripts/03_extract_text.py --source website --limit 20
+
+This uses Docling for high-quality extraction. Show me the results.
+```
+
+---
+
+### Run AI Analysis on New Documents
+
+```
+Run Claude AI analysis on the new website documents:
+
+python scripts/04_analyze_with_ai.py --source website --dry-run
+
+Show estimated cost first, then if reasonable:
+python scripts/04_analyze_with_ai.py --source website --limit 10
+```
+
+---
+
+### Compare ListCorp vs Website Results
+
+```
+Compare the quality of documents found via ListCorp vs Website crawler:
+
+sqlite3 data/esg_intel.db "
+SELECT 
+    source,
+    COUNT(*) as doc_count,
+    AVG(char_count) as avg_chars,
+    SUM(CASE WHEN extraction_status = 'success' THEN 1 ELSE 0 END) as successful,
+    COUNT(DISTINCT company_id) as unique_companies
+FROM documents 
+GROUP BY source;
+"
+
+Also show me which companies have documents from BOTH sources:
+sqlite3 data/esg_intel.db "
+SELECT c.ticker, c.name,
+    SUM(CASE WHEN d.source = 'listcorp' THEN 1 ELSE 0 END) as listcorp_docs,
+    SUM(CASE WHEN d.source = 'website' THEN 1 ELSE 0 END) as website_docs
+FROM companies c
+JOIN documents d ON c.id = d.company_id
+GROUP BY c.id
+HAVING listcorp_docs > 0 AND website_docs > 0;
+"
+```
+
+---
+
+### Debug: Website Not Found
+
+```
+The crawler can't find a company's website. Debug for ticker ABC:
+
+1. Check what ListCorp shows:
+   - Visit https://www.listcorp.com/asx/abc manually
+   - Look for "Website" link in company info
+
+2. Check our database:
+   sqlite3 data/esg_intel.db "SELECT ticker, name, website FROM companies WHERE ticker = 'ABC';"
+
+3. Try to find website manually and update:
+   sqlite3 data/esg_intel.db "UPDATE companies SET website = 'example.com' WHERE ticker = 'ABC';"
+```
+
+---
+
+### Debug: No Documents Found on Website
+
+```
+The crawler found the website but no ESG documents. Debug:
+
+1. Check if sitemap exists:
+   curl -s https://example.com/robots.txt | grep -i sitemap
+   curl -s https://example.com/sitemap.xml | head -50
+
+2. Check common sustainability URLs manually:
+   - https://example.com/sustainability
+   - https://example.com/investors
+   - https://example.com/esg
+   - https://example.com/about/sustainability
+
+3. Show me what URLs the crawler found and filtered
+```
+
+---
 
 ### Build Milestone 5: Prospect Scoring
 
@@ -352,6 +333,8 @@ Priority tiers: hot (75+), warm (55-74), cool (35-54), cold (<35)
 Test with: python scripts/05_score_prospects.py
 ```
 
+---
+
 ### Build Milestone 6: Dashboard
 
 ```
@@ -361,186 +344,113 @@ Please create app/dashboard.py with:
 1. Filterable prospect list (by priority tier, sector, score)
 2. Company detail view showing all ESG data
 3. Progress charts (emissions/RE% over multiple years)
-4. Source document links back to ListCorp
+4. Source document links (both ListCorp and company website)
 5. CSV export button for filtered results
-
-Use the dashboard layout from blueprint.md as a guide.
 
 Test with: streamlit run app/dashboard.py
 ```
 
-### Debug: Docling Not Working
+---
+
+### Install Dependencies
 
 ```
-Docling extraction is failing. Help me debug:
+Install all required packages:
 
-1. Check if Docling is installed: pip show docling
-2. Try a simple test:
-python -c "
-from docling.document_converter import DocumentConverter
-converter = DocumentConverter()
-result = converter.convert('https://www.listcorp.com/asx/xro/xero-limited/news/fy25-sustainability-report-3189699.html')
-print(f'Extracted {len(result.document.export_to_markdown())} chars')
-"
+pip install -r requirements.txt
+playwright install chromium
 
-3. If that fails, show me the full error traceback
-```
-
-### Debug: No Documents Found
-
-```
-The document finder isn't finding ESG documents. Help me debug:
-
-1. Test with a known company:
-python scripts/02_find_esg_docs.py --ticker XRO -v
-
-2. Check what URLs we're hitting and if we're getting blocked
-3. Show me the HTML structure of the ListCorp page to verify our selectors
-```
-
-### View Current Database Stats
-
-```
-Give me a full status report on the database:
-
-1. Total companies: sqlite3 data/esg_intel.db "SELECT COUNT(*) FROM companies;"
-2. Total documents: sqlite3 data/esg_intel.db "SELECT COUNT(*) FROM documents;"
-3. Documents by type: sqlite3 data/esg_intel.db "SELECT document_type, COUNT(*) FROM documents GROUP BY document_type;"
-4. Extraction status: sqlite3 data/esg_intel.db "SELECT extraction_status, COUNT(*) FROM documents GROUP BY extraction_status;"
-5. ESG data extracted: sqlite3 data/esg_intel.db "SELECT COUNT(*) FROM esg_data;"
-6. Prospect scores: sqlite3 data/esg_intel.db "SELECT priority_tier, COUNT(*) FROM prospect_scores GROUP BY priority_tier;"
+Verify key packages:
+python -c "from docling.document_converter import DocumentConverter; print('Docling OK')"
+python -c "from playwright.sync_api import sync_playwright; print('Playwright OK')"
+python -c "import anthropic; print('Anthropic OK')"
 ```
 
 ---
 
 ## Quick Start
 
-### Setup
-
 ```bash
-# Create virtual environment
+# Setup
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
+source venv/bin/activate
 pip install -r requirements.txt
-
-# Install Playwright browsers
 playwright install chromium
+cp .env.example .env  # Add your ANTHROPIC_API_KEY
 
-# Create your .env file
-cp .env.example .env
-# Edit .env and add your ANTHROPIC_API_KEY
-```
-
-### Run Pipeline
-
-```bash
-# Milestone 1: Import companies (already done)
-python scripts/01_import_companies.py
-
-# Milestone 2: Find ESG documents
-python scripts/02_find_esg_docs.py --limit 100
-
-# Milestone 3: Extract text with Docling
-python scripts/03_extract_text.py --limit 10
-
-# Milestone 4: AI analysis (coming soon)
-python scripts/04_analyze_with_ai.py --dry-run
-
-# Milestone 5: Score prospects (coming soon)
-python scripts/05_score_prospects.py
-
-# Milestone 6: Dashboard (coming soon)
-streamlit run app/dashboard.py
-```
-
-### Verify Progress
-
-```bash
-# Check companies
-sqlite3 data/esg_intel.db "SELECT COUNT(*) FROM companies;"
-
-# Check documents found
-sqlite3 data/esg_intel.db "SELECT COUNT(*) FROM documents;"
-
-# Check extraction status
-sqlite3 data/esg_intel.db "SELECT extraction_status, COUNT(*) FROM documents GROUP BY extraction_status;"
-
-# View sample extracted text
-sqlite3 data/esg_intel.db "SELECT ticker, title, char_count FROM documents d JOIN companies c ON d.company_id = c.id WHERE extraction_status = 'success' LIMIT 5;"
+# Run pipeline
+python scripts/01_import_companies.py          # Import companies
+python scripts/02_find_esg_docs.py --limit 50  # ListCorp method
+python scripts/02b_find_via_website.py --limit 50  # Website crawler (NEW)
+python scripts/03_extract_text.py              # Extract with Docling
+python scripts/04_analyze_with_ai.py           # AI analysis
+python scripts/05_score_prospects.py           # Score prospects
+streamlit run app/dashboard.py                 # View dashboard
 ```
 
 ## Project Structure
 
 ```
 esg-intelligence/
-├── config/
-│   └── settings.py           # Configuration settings
+├── config/settings.py
 ├── data/
-│   ├── companies.csv         # Source CSV (2,239 ASX companies)
+│   ├── companies.csv         # 2,239 ASX companies
 │   └── esg_intel.db          # SQLite database
 ├── src/
-│   ├── database/
-│   │   └── schema.py         # Database initialization
+│   ├── database/schema.py
 │   ├── scraper/
-│   │   ├── listcorp_news.py  # Find ESG docs on ListCorp
-│   │   └── text_extractor.py # Extract text with Docling
-│   └── analyzer/             # (Milestone 4+)
-│       ├── llm_extractor.py  # Claude API integration
-│       └── scorer.py         # Prospect scoring
+│   │   ├── listcorp_news.py      # Milestone 2a: ASX announcements
+│   │   ├── company_website.py    # Milestone 2b: Website crawler (NEW)
+│   │   └── text_extractor.py     # Milestone 3: Docling extraction
+│   └── analyzer/
+│       ├── llm_extractor.py      # Milestone 4: Claude AI
+│       └── scorer.py             # Milestone 5: Prospect scoring
 ├── scripts/
 │   ├── 01_import_companies.py
-│   ├── 02_find_esg_docs.py
+│   ├── 02_find_esg_docs.py       # ListCorp scraper
+│   ├── 02b_find_via_website.py   # Website crawler (NEW)
 │   ├── 03_extract_text.py
-│   ├── 04_analyze_with_ai.py # (Milestone 4)
-│   └── 05_score_prospects.py # (Milestone 5)
-└── app/
-    └── dashboard.py          # (Milestone 6)
+│   ├── 04_analyze_with_ai.py
+│   └── 05_score_prospects.py
+└── app/dashboard.py              # Milestone 6: Streamlit
 ```
 
 ## Technology Stack
 
-| Component | Technology | Why |
-|-----------|------------|-----|
-| Language | Python 3.11+ | Simple, widely used |
-| Database | SQLite | Zero config, single file |
+| Component | Technology | Notes |
+|-----------|------------|-------|
+| Language | Python 3.11+ | |
+| Database | SQLite | Single file, zero config |
 | Web Scraping | Playwright + stealth | Handles JS-rendered pages |
-| **Document Extraction** | **Docling** (IBM) | **97.9% table accuracy on sustainability reports!** |
-| PDF Fallback | PyMuPDF | Backup if Docling fails |
-| AI Analysis | Claude API | Milestone 4 |
-| Dashboard | Streamlit | Milestone 6 |
-
-### Why Docling?
-
-Docling is IBM's open-source document processing library, specifically benchmarked on sustainability reports:
-
-- **97.9% accuracy** on complex table extraction
-- AI-powered layout analysis preserves reading order
-- Built-in OCR for scanned documents
-- Handles PDF, DOCX, XLSX, HTML
-- Outputs clean Markdown perfect for LLM analysis
-
-**Note**: First run downloads AI models (~1-2GB). This is a one-time setup.
+| Document Extraction | **Docling** (IBM) | 97.9% table accuracy! |
+| AI Analysis | Claude API | Structured ESG extraction |
+| Dashboard | Streamlit | Interactive visualization |
 
 ## Database Schema
 
-The database has 4 main tables:
+```sql
+-- Companies with website column
+companies (
+    id, ticker, name, sector, industry, market_cap,
+    website TEXT  -- NEW: company domain (e.g., "xero.com")
+)
 
-1. **companies** - All ASX companies (2,239 imported)
-2. **documents** - ESG documents found on ListCorp (with extracted text)
-3. **esg_data** - AI-extracted ESG metrics (Milestone 4)
-4. **prospect_scores** - Calculated sales prospect scores (Milestone 5)
+-- Documents with source tracking
+documents (
+    id, company_id, title, url, document_type,
+    source TEXT DEFAULT 'listcorp',  -- NEW: 'listcorp' or 'website'
+    text_content, extraction_status, char_count, table_count
+)
+
+-- ESG data extracted by AI
+esg_data (id, company_id, document_id, fiscal_year, ...)
+
+-- Prospect scores
+prospect_scores (id, company_id, total_score, priority_tier, ...)
+```
 
 ## Resources
 
-- Full specification: `blueprint.md`
-- Source CSV: `data/companies.csv`
+- Blueprint: `blueprint.md`
+- Companies CSV: `data/companies.csv`
 - Database: `data/esg_intel.db`
-
-## Notes
-
-- The CSV file came from the previous esgWIKI project
-- Focus is on staying within ListCorp (not scraping individual company websites)
-- Multi-year coverage (FY2021-2025) to track progress over time
-- Docling provides much better table extraction than PyMuPDF alone

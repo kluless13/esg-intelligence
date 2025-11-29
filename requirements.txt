@@ -1,9 +1,24 @@
+# Core dependencies
 requests>=2.31.0
 beautifulsoup4>=4.12.0
 lxml>=5.0.0
-pymupdf>=1.24.0
-playwright>=1.40.0
-anthropic>=0.18.0
-streamlit>=1.32.0
 pandas>=2.0.0
 python-dotenv>=1.0.0
+
+# Web scraping
+playwright>=1.40.0
+playwright-stealth>=1.0.6
+
+# Document extraction - Docling (IBM's AI-powered extraction)
+# 97.9% accuracy on sustainability report tables!
+# Handles PDF, DOCX, XLSX, HTML with preserved table structure
+docling>=2.63.0
+
+# Fallback PDF extraction (if Docling fails)
+pymupdf>=1.24.0
+
+# AI Analysis
+anthropic>=0.18.0
+
+# Dashboard
+streamlit>=1.32.0

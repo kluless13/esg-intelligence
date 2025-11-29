@@ -91,10 +91,24 @@ Do not deviate from this stack without explicit approval:
 | Language | Python 3.11+ | klu13 knows some Python |
 | Database | SQLite | Zero config, single file, SQL queryable |
 | Web Scraping | `requests` + `BeautifulSoup4` | Simple, works for ListCorp |
-| Browser Fallback | `playwright` | Only if JS rendering needed |
-| PDF Extraction | `pymupdf` (fitz) | For PDFs when text not in HTML |
+| Browser Automation | `playwright` + `playwright-stealth` | For JS-rendered pages |
+| **Document Extraction** | **`docling`** (IBM) | **97.9% accuracy on sustainability report tables!** |
+| PDF Fallback | `pymupdf` (fitz) | Backup if Docling fails |
 | AI Extraction | Claude API (Anthropic) | klu13 has access |
 | Dashboard | Streamlit | One file, Python only, no JS needed |
+
+### Why Docling? (v2.1 Update)
+
+Docling is IBM's open-source document processing library that was **specifically benchmarked on sustainability reports** with 97.9% table accuracy.
+
+**Key advantages over pymupdf:**
+- AI-powered layout analysis preserves reading order
+- TableFormer model recognizes complex table structures
+- Built-in OCR for scanned documents
+- Handles PDF, DOCX, XLSX, HTML with one tool
+- Outputs clean Markdown perfect for Claude analysis
+
+**First run note:** Docling downloads AI models (~1-2GB) on first use. This is a one-time setup.
 
 ### Required Python Packages
 
@@ -1008,3 +1022,496 @@ The project is complete when:
 *Document Version: 2.0*  
 *Updated: November 2025*  
 *Key Change: ListCorp-centric approach - extract text directly from HTML where possible*
+
+---
+
+## MILESTONE 2B: SEARCH ENGINE-BASED DOCUMENT DISCOVERY (PRIORITY!)
+
+### Goal
+Replace/supplement ListCorp scraping with search engine discovery to find sustainability reports wherever they are published (company websites, CDP, GRI database, etc.)
+
+### Why This Matters
+
+**Current approach limitations:**
+- Only works for ASX companies (ListCorp is Australia-only)
+- Misses reports published on company websites
+- Low success rate: 6 companies → 2 with ESG data (33%)
+
+**Search-based approach advantages:**
+- Works for ANY stock exchange globally (NASDAQ, NYSE, LSE, etc.)
+- Finds reports on company websites (where 70%+ are published)
+- Can search multiple years simultaneously
+- Discovers CDP disclosures, GRI reports, TCFD statements
+
+### Success Criteria
+- [ ] Can search for sustainability reports via Google/Bing
+- [ ] Filters results to find actual PDF/HTML documents
+- [ ] Downloads and stores documents in database
+- [ ] Works for companies from any stock exchange
+- [ ] Target: 80%+ document discovery rate (vs current 33%)
+
+### Implementation
+
+#### STEP 1: Choose Search API
+
+**Free Options:**
+- `duckduckgo-search` Python library (no API key needed)
+- `googlesearch-python` (unofficial, may get blocked)
+
+**Paid Options (recommended for production):**
+- SerpAPI ($50/month for 5,000 searches)
+- Bing Search API ($3 per 1,000 queries)
+
+**Recommendation:** Start with DuckDuckGo for prototyping, upgrade to SerpAPI for production.
+
+#### STEP 2: Create src/scraper/search_engine.py
+
+```python
+"""
+Search engine-based document discovery.
+Finds sustainability reports using Google/Bing/DuckDuckGo.
+"""
+
+from duckduckgo_search import DDGS
+import requests
+from urllib.parse import urlparse, urljoin
+import time
+
+# Search query templates
+QUERY_TEMPLATES = [
+    '"{company_name}" sustainability report {year} filetype:pdf',
+    '"{company_name}" ESG report {year}',
+    '"{ticker}" climate disclosure TCFD {year}',
+    '"{company_name}" annual report {year} environment',
+    'site:{domain} sustainability OR ESG OR climate',
+    '"{company_name}" CDP climate change {year}',
+    '"{company_name}" GRI report {year}',
+]
+
+def search_for_sustainability_reports(
+    company_name: str,
+    ticker: str,
+    years: list = [2024, 2023, 2022],
+    max_results_per_query: int = 5
+) -> list:
+    """
+    Search for sustainability reports using multiple search engines.
+
+    Args:
+        company_name: Full company name (e.g., "Xero Limited")
+        ticker: Stock ticker (e.g., "XRO")
+        years: List of years to search
+        max_results_per_query: Max results per search query
+
+    Returns:
+        List of dicts:
+        [{
+            'url': 'https://...',
+            'title': 'Xero 2024 Sustainability Report',
+            'source': 'google',
+            'year': 2024,
+            'query_type': 'sustainability_pdf',
+            'relevance_score': 0.95
+        }]
+    """
+    results = []
+
+    # Try to guess company domain for site-specific search
+    domain = guess_company_domain(company_name, ticker)
+
+    for year in years:
+        for query_template in QUERY_TEMPLATES:
+            # Format query
+            query = query_template.format(
+                company_name=company_name,
+                ticker=ticker,
+                year=year,
+                domain=domain or ticker.lower() + '.com'
+            )
+
+            # Search with DuckDuckGo
+            try:
+                ddg_results = search_duckduckgo(query, max_results_per_query)
+                results.extend(ddg_results)
+                time.sleep(1)  # Rate limiting
+            except Exception as e:
+                print(f"Search error: {e}")
+
+    # Deduplicate and score results
+    unique_results = deduplicate_urls(results)
+    scored_results = score_relevance(unique_results, company_name, ticker)
+
+    return scored_results
+
+
+def search_duckduckgo(query: str, max_results: int = 5) -> list:
+    """Search DuckDuckGo and return results."""
+    with DDGS() as ddgs:
+        results = []
+        for r in ddgs.text(query, max_results=max_results):
+            results.append({
+                'url': r['href'],
+                'title': r['title'],
+                'snippet': r.get('body', ''),
+                'source': 'duckduckgo'
+            })
+        return results
+
+
+def guess_company_domain(company_name: str, ticker: str) -> str:
+    """
+    Attempt to guess company's website domain.
+
+    Common patterns:
+    - ticker.com (e.g., xero.com)
+    - companyname.com (e.g., microsoft.com)
+    - ticker.com.au (ASX companies)
+
+    Returns:
+        Domain string or None if can't determine
+    """
+    candidates = [
+        f"{ticker.lower()}.com",
+        f"{ticker.lower()}.com.au",
+        f"www.{ticker.lower()}.com",
+        f"{company_name.lower().replace(' ', '').replace('limited', '').replace('ltd', '')}.com",
+    ]
+
+    for domain in candidates:
+        try:
+            # Quick check if domain exists
+            response = requests.head(f"https://{domain}", timeout=3, allow_redirects=True)
+            if response.status_code == 200:
+                return domain
+        except:
+            continue
+
+    return None
+
+
+def score_relevance(results: list, company_name: str, ticker: str) -> list:
+    """
+    Score search results by relevance.
+
+    Scoring factors:
+    - URL contains company name/ticker (high weight)
+    - Title contains "sustainability", "ESG", "climate" (high weight)
+    - File type is PDF (medium weight)
+    - From official company domain (high weight)
+    - Recent year mentioned (medium weight)
+    """
+    scored = []
+
+    for result in results:
+        score = 0.0
+        url = result['url'].lower()
+        title = result.get('title', '').lower()
+
+        # Check for company identifiers
+        if ticker.lower() in url or company_name.lower() in url:
+            score += 0.3
+
+        # Check for ESG keywords in title
+        esg_keywords = ['sustainability', 'esg', 'climate', 'tcfd', 'gri', 'cdp', 'environment']
+        if any(keyword in title for keyword in esg_keywords):
+            score += 0.3
+
+        # Bonus for PDF
+        if url.endswith('.pdf') or 'filetype=pdf' in url:
+            score += 0.2
+
+        # Check if from official domain
+        domain = urlparse(url).netloc
+        if ticker.lower() in domain:
+            score += 0.2
+
+        # Penalize if URL looks irrelevant
+        spam_keywords = ['jobs', 'careers', 'news-article', 'blog', 'linkedin', 'twitter']
+        if any(keyword in url for keyword in spam_keywords):
+            score -= 0.3
+
+        result['relevance_score'] = max(0, min(1, score))
+        scored.append(result)
+
+    # Sort by relevance
+    return sorted(scored, key=lambda x: x['relevance_score'], reverse=True)
+
+
+def deduplicate_urls(results: list) -> list:
+    """Remove duplicate URLs from search results."""
+    seen = set()
+    unique = []
+
+    for result in results:
+        url = result['url']
+        # Normalize URL (remove trailing slashes, etc.)
+        normalized = url.rstrip('/')
+
+        if normalized not in seen:
+            seen.add(normalized)
+            unique.append(result)
+
+    return unique
+
+
+def filter_valid_documents(results: list, min_relevance: float = 0.4) -> list:
+    """
+    Filter search results to only include likely sustainability documents.
+
+    Args:
+        results: List of search result dicts with relevance_score
+        min_relevance: Minimum relevance score to include
+
+    Returns:
+        Filtered list of high-confidence documents
+    """
+    valid = []
+
+    for result in results:
+        # Must meet minimum relevance threshold
+        if result.get('relevance_score', 0) < min_relevance:
+            continue
+
+        # Must be a document (PDF, HTML page with content, not just news link)
+        url = result['url'].lower()
+        if url.endswith('.pdf'):
+            valid.append(result)
+        elif any(keyword in url for keyword in ['sustainability', 'esg', 'climate', 'environment']):
+            # Likely an HTML sustainability page
+            valid.append(result)
+
+    return valid
+```
+
+#### STEP 3: Create scripts/02b_find_via_search.py
+
+```python
+"""
+Find ESG documents using search engines instead of ListCorp.
+
+This is more effective because:
+1. Works for any stock exchange globally (not just ASX)
+2. Finds reports on company websites (where most are published)
+3. Can search multiple years in parallel
+4. Discovers CDP/GRI/TCFD disclosures
+
+Usage:
+    python scripts/02b_find_via_search.py --limit 10     # Search for 10 companies
+    python scripts/02b_find_via_search.py --company XRO  # Search for one company
+    python scripts/02b_find_via_search.py --years 2024,2023,2022  # Specific years
+"""
+
+import sys
+import sqlite3
+import argparse
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).parent.parent))
+from config.settings import DB_PATH
+from src.scraper.search_engine import (
+    search_for_sustainability_reports,
+    filter_valid_documents
+)
+
+
+def get_companies_to_search(limit=None, ticker=None):
+    """Get companies that need document search."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    if ticker:
+        query = "SELECT id, ticker, name FROM companies WHERE ticker = ? LIMIT 1"
+        cursor.execute(query, (ticker.upper(),))
+    else:
+        query = "SELECT id, ticker, name FROM companies ORDER BY ticker"
+        if limit:
+            query += f" LIMIT {limit}"
+        cursor.execute(query)
+
+    companies = cursor.fetchall()
+    conn.close()
+    return companies
+
+
+def save_document(company_id, ticker, title, url, year, source):
+    """Save discovered document to database."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    # Check if we already have this URL
+    cursor.execute("SELECT id FROM documents WHERE pdf_url = ?", (url,))
+    if cursor.fetchone():
+        conn.close()
+        return False  # Already exists
+
+    cursor.execute("""
+        INSERT INTO documents (
+            company_id,
+            title,
+            document_type,
+            financial_year,
+            listcorp_news_url,
+            pdf_url,
+            extraction_status
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (
+        company_id,
+        title,
+        'sustainability_report',  # or derive from title
+        f"FY{year}" if year else None,
+        url,  # Using this field for the source URL
+        url if url.endswith('.pdf') else None,
+        'pending'
+    ))
+
+    conn.commit()
+    conn.close()
+    return True
+
+
+def main():
+    parser = argparse.ArgumentParser(description='Find ESG documents via search engines')
+    parser.add_argument('--limit', type=int, help='Number of companies to process')
+    parser.add_argument('--company', type=str, help='Process single company by ticker')
+    parser.add_argument('--years', type=str, default='2024,2023,2022',
+                        help='Comma-separated years to search')
+    parser.add_argument('--min-relevance', type=float, default=0.5,
+                        help='Minimum relevance score (0-1)')
+
+    args = parser.parse_args()
+
+    years = [int(y) for y in args.years.split(',')]
+
+    print("=" * 80)
+    print("ESG Intelligence - Search Engine Document Discovery")
+    print("=" * 80)
+    print()
+
+    companies = get_companies_to_search(args.limit, args.company)
+
+    if not companies:
+        print("No companies to process!")
+        return
+
+    print(f"Searching for documents for {len(companies)} companies...")
+    print(f"Years: {years}")
+    print(f"Minimum relevance: {args.min_relevance}")
+    print()
+
+    total_found = 0
+    total_saved = 0
+
+    for i, (company_id, ticker, name) in enumerate(companies, 1):
+        print(f"[{i}/{len(companies)}] {ticker} - {name}")
+
+        # Search for documents
+        results = search_for_sustainability_reports(
+            company_name=name,
+            ticker=ticker,
+            years=years
+        )
+
+        # Filter by relevance
+        valid_docs = filter_valid_documents(results, args.min_relevance)
+
+        print(f"         Found {len(valid_docs)} relevant documents")
+
+        # Save to database
+        saved_count = 0
+        for doc in valid_docs[:5]:  # Limit to top 5 per company
+            year = doc.get('year')
+            saved = save_document(
+                company_id=company_id,
+                ticker=ticker,
+                title=doc['title'],
+                url=doc['url'],
+                year=year,
+                source=doc.get('source', 'search')
+            )
+            if saved:
+                saved_count += 1
+                print(f"         ✓ {doc['title'][:60]} (score: {doc['relevance_score']:.2f})")
+
+        total_found += len(valid_docs)
+        total_saved += saved_count
+
+    print()
+    print("=" * 80)
+    print("Summary")
+    print("=" * 80)
+    print(f"Companies searched:     {len(companies)}")
+    print(f"Documents found:        {total_found}")
+    print(f"New documents saved:    {total_saved}")
+    print()
+    print("Next steps:")
+    print("  1. Extract text: python scripts/03_extract_text.py")
+    print("  2. Analyze with AI: python scripts/04_analyze_with_ai.py")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+#### STEP 4: Install Dependencies
+
+Add to `requirements.txt`:
+```
+duckduckgo-search>=4.0.0
+```
+
+Or for production (paid):
+```
+google-search-results>=2.4.2  # SerpAPI
+```
+
+### Testing
+
+```bash
+# Install
+pip install duckduckgo-search
+
+# Test with single company
+python scripts/02b_find_via_search.py --company XRO
+
+# Process 10 companies
+python scripts/02b_find_via_search.py --limit 10
+
+# Search specific years
+python scripts/02b_find_via_search.py --company BHP --years 2024,2023,2022,2021
+```
+
+### Expected Output
+
+```
+[1/1] XRO - Xero Limited
+         Found 8 relevant documents
+         ✓ Xero 2024 Climate Appendix (score: 0.89)
+         ✓ Xero FY24 Annual Report (score: 0.75)
+         ✓ Xero 2023 Sustainability Report (score: 0.92)
+         ✓ Xero Climate Disclosures TCFD 2023 (score: 0.88)
+         ✓ Xero GRI Index 2024 (score: 0.71)
+
+Summary
+Companies searched:     1
+Documents found:        8
+New documents saved:    5
+```
+
+### Advantages Over ListCorp Scraping
+
+| Feature | ListCorp | Search Engine |
+|---------|----------|---------------|
+| **Coverage** | ASX only | **Global (any exchange)** |
+| **Document location** | Stock announcements only | **Company websites, CDP, GRI, etc.** |
+| **Success rate** | ~33% | **Expected 70-80%** |
+| **Multi-year** | Manual | **Automatic (search all years)** |
+| **TCFD/CDP** | Rarely filed | **Often finds these** |
+| **Cost** | Free | **Free (DuckDuckGo) or ~$50/mo (SerpAPI)** |
+
+### Recommended Next Steps
+
+1. **Implement search-based discovery** (this milestone)
+2. Run on ASX companies to compare vs ListCorp
+3. Add NASDAQ/NYSE company lists
+4. Scale globally
+

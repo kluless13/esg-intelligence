@@ -94,6 +94,65 @@ Crawl company websites directly using a 4-step approach:
 
 ---
 
+## ✅ Milestone 2b Hardening Updates (Nov 2025)
+
+What we added to improve discovery and robustness:
+
+- Sitemap insufficiency fallback
+  - If sitemap yields <10 URLs or 0 ESG URLs, auto-fallback to crawling common paths and on-site inspection.
+- On-site inspection (browser-assisted)
+  - Scans header/nav/footer and tries on-site search inputs for "sustainability" and "esg".
+- Governance/Investor seeding from ListCorp
+  - Reads “Company Resources” on the ListCorp company page (e.g., Corporate Governance, Investor Relations, Reports).
+  - Uses these portals as seeds and runs a bounded same‑domain BFS.
+  - Cross‑TLD aware (e.g., `anz.com` and `anz.com.au` treated as same brand).
+- Bounded BFS (balanced)
+  - BFS from governance/investor/sustainability hubs; prioritizes paths with sustainability/esg/report/investor/governance/climate/environment/tcfd/data/download/documents/publications.
+  - Caps pages visited; stops early when enough docs are found.
+- Multi‑format document detection
+  - Accepts `.pdf`, `.xlsx`, `.xls`, `.xlsm`, `.csv`, `.ods` and query‑style downloads (`?file=…`, `?document=…`).
+  - More lenient on link text within pre-filtered ESG pages to avoid missing generically named files (e.g., “Databook”).
+- Headful browser fallback (final safety net)
+  - Optional, launches Chromium (visible) to auto‑scroll/expand lists and harvest links from governance/investor hubs for hard sites.
+- Schema normalization and de‑duplication
+  - Added `document_url` and `website_source_page` with a unique index on `(company_id, document_url, source)`.
+  - Inserts now use `document_url` for uniqueness; `website_source_page` preserves provenance.
+- Logging and diagnostics
+  - Logs which portals were discovered, BFS stats, and filtered‑out link samples.
+
+New CLI flags (scripts/02b_find_via_website.py):
+
+- `--fallback-inspect` Enable on-site inspect (nav/footer/search) fallback
+- `--site-search-queries "sustainability,esg"` Override on-site search queries
+- `--bfs-max-pages 100` Cap pages during governance/investor BFS
+- `--target-docs 10` Stop early when enough documents found
+- `--headful-fallback` Enable headful browser fallback to harvest links
+- `--headful-max-pages 60` Cap pages in headful fallback
+- `--headful-max-minutes 3` Time budget for headful fallback
+- `--seed-override <URL>` Add a known sustainability hub URL to seed discovery
+
+Examples:
+
+```bash
+# Run single company with balanced discovery (no DDG)
+python scripts/02b_find_via_website.py --ticker XRO --fallback-inspect --bfs-max-pages 120 --max-esg-pages 20 -vv
+
+# Hard site: enable headful fallback and add a known seed
+python scripts/02b_find_via_website.py --ticker ANZ \
+  --fallback-inspect --bfs-max-pages 120 --max-esg-pages 20 \
+  --headful-fallback \
+  --seed-override "https://www.anz.com.au/about-us/esg/environmental-sustainability/" -vv
+
+# Another company (e.g., CSL) with the balanced stack
+python scripts/02b_find_via_website.py --ticker CSL --fallback-inspect --bfs-max-pages 120 --max-esg-pages 20 -vv
+```
+
+Recent result highlights:
+
+- XRO (xero.com): 19,053 sitemap URLs → 772 ESG URLs → multiple reports incl. Sustainability Report 2025.
+- CSL (csl.com): 1,066 sitemap URLs → 66 ESG URLs → 48 documents saved (annual reports, modern slavery, tax transparency, WGEA, CR reports, assurance statements).
+- BHP (bhp.com): sitemap discovery strong; some sites require deeper extraction on ESG pages (use inspect/BFS/headful as needed).
+
 ## 🤖 Claude Code Prompts
 
 Copy-paste these prompts to continue development.

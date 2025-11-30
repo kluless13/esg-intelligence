@@ -102,15 +102,20 @@ def save_document(company_id: int, ticker: str, report: dict) -> bool:
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
-    # Check if we already have this URL
+    document_url_value = report['url']
+    website_source_page_value = report.get('source_page')
+
+    # Duplicate check by (company_id, source, document_url)
     cursor.execute("""
         SELECT id FROM documents
-        WHERE (listcorp_news_url = ? OR pdf_url = ?)
-    """, (report['url'], report['url']))
+        WHERE company_id = ? AND source = 'website' AND document_url = ?
+    """, (company_id, document_url_value))
 
     if cursor.fetchone():
         conn.close()
         return False  # Already exists
+
+    pdf_url_value = report['url'] if report['type'] == 'pdf' else None
 
     # Determine document type from title
     title_lower = report['title'].lower()
@@ -138,27 +143,41 @@ def save_document(company_id: int, ticker: str, report: dict) -> bool:
             financial_year = f"FY{year_str}"
 
     # Insert document
-    cursor.execute("""
-        INSERT INTO documents (
-            company_id,
-            title,
-            document_type,
-            financial_year,
-            listcorp_news_url,
-            pdf_url,
-            source,
-            extraction_status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
+    # Build dynamic insert to support optional normalized columns
+    cursor.execute("PRAGMA table_info(documents)")
+    cols = [row[1] for row in cursor.fetchall()]
+
+    base_columns = [
+        'company_id', 'title', 'document_type', 'financial_year',
+        'listcorp_news_url', 'pdf_url', 'source', 'extraction_status'
+    ]
+    params = [
         company_id,
         report['title'],
         doc_type,
         financial_year,
-        report['source_page'],  # Store source page URL
-        report['url'] if report['type'] == 'pdf' else None,
+        document_url_value,  # Keep compatibility; set listcorp_news_url to document_url
+        pdf_url_value,
         'website',
         'pending'
-    ))
+    ]
+
+    insert_columns = base_columns.copy()
+
+    # Normalized provenance fields if available
+    if 'source_page_url' in cols:
+        insert_columns.append('source_page_url')
+        params.append(website_source_page_value)
+    if 'document_url' in cols:
+        insert_columns.append('document_url')
+        params.append(document_url_value)
+    if 'website_source_page' in cols:
+        insert_columns.append('website_source_page')
+        params.append(website_source_page_value)
+
+    placeholders = ", ".join(["?"] * len(insert_columns))
+    insert_sql = f"INSERT INTO documents ({', '.join(insert_columns)}) VALUES ({placeholders})"
+    cursor.execute(insert_sql, params)
 
     conn.commit()
     conn.close()
@@ -172,15 +191,43 @@ def main():
     parser.add_argument('--ticker', type=str, help='Process single company by ticker')
     parser.add_argument('--skip-existing', action='store_true',
                         help='Skip companies that already have website docs')
+    parser.add_argument('--max-esg-pages', type=int, default=15,
+                        help='Maximum ESG pages to scan per company (default: 15)')
+    parser.add_argument('--js-downloads', action='store_true',
+                        help='Enable simple JS-driven download discovery (slower)')
+    parser.add_argument('--fallback-inspect', action='store_true',
+                        help='Enable on-site inspection fallback (nav/footer/search)')
+    parser.add_argument('--site-search-queries', type=str, default='sustainability,esg',
+                        help='Comma-separated queries for on-site search fallback')
+    parser.add_argument('--fallback-search', action='store_true',
+                        help='Enable DuckDuckGo search fallback (last 5 years)')
+    parser.add_argument('--search-years', type=str, default='',
+                        help='Comma-separated years (e.g., 2025,2024,2023,2022,2021)')
+    parser.add_argument('--bfs-max-pages', type=int, default=100,
+                        help='Max pages to visit in bounded BFS from governance/investor seeds')
+    parser.add_argument('--target-docs', type=int, default=10,
+                        help='Stop early when at least this many documents found for a company')
+    parser.add_argument('--headful-fallback', action='store_true',
+                        help='Enable headful browser fallback to collect links from governance/investor seeds')
+    parser.add_argument('--headful-max-pages', type=int, default=60,
+                        help='Max pages to visit during headful fallback')
+    parser.add_argument('--headful-max-minutes', type=int, default=3,
+                        help='Time budget in minutes for headful fallback')
+    parser.add_argument('--seed-override', type=str, default='',
+                        help='Optional single seed URL to add (e.g., known sustainability hub)')
     parser.add_argument('-v', '--verbose', action='store_true',
-                        help='Show detailed output')
+                        help='Verbose (INFO) logging')
+    parser.add_argument('-vv', '--very-verbose', action='store_true',
+                        help='Very verbose (DEBUG) logging')
 
     args = parser.parse_args()
 
     # Set logging level
-    if args.verbose:
-        import logging
+    import logging
+    if args.very_verbose:
         logging.basicConfig(level=logging.DEBUG)
+    elif args.verbose:
+        logging.basicConfig(level=logging.INFO)
 
     print("=" * 80)
     print("ESG Intelligence - Website Crawler (Milestone 2b)")
@@ -218,7 +265,21 @@ def main():
         domain = existing_website
 
         # Find reports
-        reports = find_esg_reports(ticker, name, domain)
+        reports = find_esg_reports(
+            ticker,
+            name,
+            domain,
+            max_esg_pages=args.max_esg_pages,
+            enable_js_downloads=args.js_downloads,
+            fallback_inspect=args.fallback_inspect,
+            site_search_queries=[x.strip() for x in args.site_search_queries.split(',') if x.strip()],
+            fallback_search=args.fallback_search,
+            search_years=[int(x.strip()) for x in args.search_years.split(',') if x.strip().isdigit()] if args.search_years else None,
+            headful_fallback=args.headful_fallback,
+            headful_max_pages=args.headful_max_pages,
+            headful_max_minutes=args.headful_max_minutes,
+            seed_override=(args.seed_override if args.seed_override else None)
+        )
 
         # If we found a website and didn't have one stored, save it
         if not existing_website and reports:
@@ -244,6 +305,8 @@ def main():
         if not reports:
             print(f"  ⚠ No reports found")
 
+        # Per-company summary
+        print(f"  -> Found: {len(reports)} | Saved: {saved_count}")
         print()  # Blank line between companies
 
     # Print summary

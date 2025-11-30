@@ -127,6 +127,53 @@ def init_database():
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_esg_data_company ON esg_data(company_id)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_prospect_scores_total ON prospect_scores(total_score DESC)")
 
+    # Backward-compatible migration: add source_page_url to documents if missing
+    cursor.execute("PRAGMA table_info(documents)")
+    document_cols = [row[1] for row in cursor.fetchall()]
+    if 'source_page_url' not in document_cols:
+        try:
+            cursor.execute("ALTER TABLE documents ADD COLUMN source_page_url TEXT")
+        except Exception:
+            pass
+
+    # Normalization: add document_url and website_source_page columns if missing
+    cursor.execute("PRAGMA table_info(documents)")
+    document_cols = [row[1] for row in cursor.fetchall()]
+    if 'document_url' not in document_cols:
+        try:
+            cursor.execute("ALTER TABLE documents ADD COLUMN document_url TEXT")
+        except Exception:
+            pass
+    if 'website_source_page' not in document_cols:
+        try:
+            cursor.execute("ALTER TABLE documents ADD COLUMN website_source_page TEXT")
+        except Exception:
+            pass
+
+    # Unique index for (company_id, document_url, source)
+    try:
+        cursor.execute("""
+            CREATE UNIQUE INDEX IF NOT EXISTS ux_documents_company_document_source
+            ON documents(company_id, document_url, source)
+        """)
+    except Exception:
+        pass
+
+    # Backfill document_url and website_source_page for website-sourced rows where missing
+    try:
+        cursor.execute("""
+            UPDATE documents
+            SET document_url = COALESCE(document_url, pdf_url, listcorp_news_url)
+            WHERE source = 'website' AND (document_url IS NULL OR document_url = '')
+        """)
+        cursor.execute("""
+            UPDATE documents
+            SET website_source_page = COALESCE(website_source_page, source_page_url, listcorp_news_url)
+            WHERE source = 'website' AND (website_source_page IS NULL OR website_source_page = '')
+        """)
+    except Exception:
+        pass
+
     # Commit changes and close connection
     conn.commit()
     conn.close()

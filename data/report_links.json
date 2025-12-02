@@ -1,0 +1,532 @@
+{
+  "metadata": {
+    "created": "2025-12-02",
+    "updated": "2025-12-02",
+    "description": "ESG/Sustainability report links for top 10 ASX companies (2022-2025)",
+    "focus": "Scope 1/2/3 emissions, renewable energy %, targets vs actuals, net zero commitments",
+    "note": "Excel databooks contain raw metrics; PDF reports contain commitments and narratives"
+  },
+  "companies": {
+    "CBA": {
+      "ticker": "CBA",
+      "company_name": "Commonwealth Bank of Australia",
+      "sector": "Financials",
+      "market_cap": "$277B",
+      "reporting_hub": "https://www.commbank.com.au/about-us/opportunity-initiatives/performance-reporting.html",
+      "reports": [
+        {
+          "title": "2025 Half Year Sustainability Performance Metrics",
+          "url": "https://www.commbank.com.au/content/dam/commbank-assets/investors/docs/results/1h25/2025-Half-Year-Sustainability-Performance-Metrics-and-Disclosures.xlsx",
+          "year": "2025",
+          "type": "xlsx",
+          "category": "databook"
+        },
+        {
+          "title": "2024 Sustainability Performance Metrics",
+          "url": "https://www.commbank.com.au/content/dam/commbank-assets/investors/docs/results/fy24/2024-Sustainability-Performance-Metrics-and-Disclosures.xlsx",
+          "year": "2024",
+          "type": "xlsx",
+          "category": "databook"
+        },
+        {
+          "title": "2023 Sustainability Performance Metrics",
+          "url": "https://www.commbank.com.au/content/dam/commbank-assets/investors/docs/results/fy23/2023-Sustainability-Performance-Metrics-and-Disclosures.xlsx",
+          "year": "2023",
+          "type": "xlsx",
+          "category": "databook"
+        },
+        {
+          "title": "2022 Sustainability Performance Metrics",
+          "url": "https://www.commbank.com.au/content/dam/commbank/about-us/shareholders/pdfs/results/fy22/cba-fy22-sustainability-performance-metrics-and-disclosures.xlsx",
+          "year": "2022",
+          "type": "xlsx",
+          "category": "databook"
+        },
+        {
+          "title": "2024 Climate Report",
+          "url": "https://www.commbank.com.au/content/dam/commbank-assets/investors/docs/results/fy24/CBA-2024-Climate-Report.pdf",
+          "year": "2024",
+          "type": "pdf",
+          "category": "climate"
+        },
+        {
+          "title": "2024 Sustainability Reporting (pages 20-47 of Annual Report)",
+          "url": "https://www.commbank.com.au/content/dam/commbank-assets/investors/docs/results/fy24/CBA-2024-Sustainability-Reporting-pages-20-47-of-the-Annual-Report.pdf",
+          "year": "2024",
+          "type": "pdf",
+          "category": "sustainability"
+        },
+        {
+          "title": "2023 Sustainability Reporting (pages 18-39 of Annual Report)",
+          "url": "https://www.commbank.com.au/content/dam/commbank-assets/investors/docs/results/fy23/2023-Sustainability-Reporting-pages-18-39-of-the-Annual-Report.pdf",
+          "year": "2023",
+          "type": "pdf",
+          "category": "sustainability"
+        }
+      ]
+    },
+    "BHP": {
+      "ticker": "BHP",
+      "company_name": "BHP Group Limited",
+      "sector": "Materials",
+      "market_cap": "$208B",
+      "reporting_hub": "https://www.bhp.com/investors/annual-reporting",
+      "reports": [
+        {
+          "title": "2025 ESG Standards and Databook",
+          "url": "https://www.bhp.com/-/media/documents/investors/annual-reports/2025/bhp-esg-standards-and-databook-2025.xlsx",
+          "year": "2025",
+          "type": "xlsx",
+          "category": "databook"
+        },
+        {
+          "title": "2024 ESG Standards and Databook",
+          "url": "https://www.bhp.com/-/media/documents/investors/annual-reports/2024/240827_esgstandardsanddatabook2024.xlsx",
+          "year": "2024",
+          "type": "xlsx",
+          "category": "databook"
+        },
+        {
+          "title": "2023 ESG Standards and Databook",
+          "url": "https://www.bhp.com/-/media/documents/investors/annual-reports/2023/230822_esgstandardsanddatabook2023.xlsx",
+          "year": "2023",
+          "type": "xlsx",
+          "category": "databook"
+        },
+        {
+          "title": "2022 ESG Standards and Databook",
+          "url": "https://www.bhp.com/-/media/documents/investors/annual-reports/2022/220906_bhpesgstandardsanddatabook2022.xlsx",
+          "year": "2022",
+          "type": "xlsx",
+          "category": "databook"
+        },
+        {
+          "title": "2024 Annual Report",
+          "url": "https://www.bhp.com/-/media/documents/investors/annual-reports/2024/240827_bhpannualreport2024.pdf",
+          "year": "2024",
+          "type": "pdf",
+          "category": "annual"
+        },
+        {
+          "title": "2024 Climate Transition Action Plan",
+          "url": "https://www.bhp.com/-/media/documents/investors/annual-reports/2024/240827_bhpclimatetransitionactionplan2024.pdf",
+          "year": "2024",
+          "type": "pdf",
+          "category": "climate"
+        },
+        {
+          "title": "2023 Annual Report",
+          "url": "https://www.bhp.com/-/media/documents/investors/annual-reports/2023/230822_bhpannualreport2023.pdf",
+          "year": "2023",
+          "type": "pdf",
+          "category": "annual"
+        },
+        {
+          "title": "2022 Annual Report",
+          "url": "https://www.bhp.com/-/media/documents/investors/annual-reports/2022/220906_bhpannualreport2022.pdf",
+          "year": "2022",
+          "type": "pdf",
+          "category": "annual"
+        }
+      ]
+    },
+    "NAB": {
+      "ticker": "NAB",
+      "company_name": "National Australia Bank Limited",
+      "sector": "Financials",
+      "market_cap": "$126B",
+      "reporting_hub": "https://www.nab.com.au/about-us/sustainability/reporting-policies-approach/performance-reporting",
+      "reports": [
+        {
+          "title": "2025 Sustainability Data Pack",
+          "url": "https://www.nab.com.au/content/dam/nab/documents/reports/corporate/2025-sustainability-data-pack.xlsx",
+          "year": "2025",
+          "type": "xlsx",
+          "category": "databook"
+        },
+        {
+          "title": "2024 Sustainability Data Pack",
+          "url": "https://www.nab.com.au/content/dam/nab/documents/reports/corporate/2024-sustainability-data-pack.xlsx",
+          "year": "2024",
+          "type": "xlsx",
+          "category": "databook"
+        },
+        {
+          "title": "2023 Sustainability Data Pack",
+          "url": "https://www.nab.com.au/content/dam/nab/documents/reports/corporate/2023-sustainability-data-pack.xlsx",
+          "year": "2023",
+          "type": "xlsx",
+          "category": "databook"
+        },
+        {
+          "title": "2024 Annual Report",
+          "url": "https://www.nab.com.au/content/dam/nab/documents/reports/corporate/2024-annual-report.pdf",
+          "year": "2024",
+          "type": "pdf",
+          "category": "annual"
+        },
+        {
+          "title": "2024 Climate Report",
+          "url": "https://www.nab.com.au/content/dam/nab/documents/reports/corporate/2024-climate-report.pdf",
+          "year": "2024",
+          "type": "pdf",
+          "category": "climate"
+        },
+        {
+          "title": "2023 Annual Report",
+          "url": "https://www.nab.com.au/content/dam/nab/documents/reports/corporate/2023-annual-report.pdf",
+          "year": "2023",
+          "type": "pdf",
+          "category": "annual"
+        },
+        {
+          "title": "2022 Annual Report",
+          "url": "https://www.nab.com.au/content/dam/nab/documents/reports/corporate/2022-annual-report.pdf",
+          "year": "2022",
+          "type": "pdf",
+          "category": "annual"
+        }
+      ]
+    },
+    "CSL": {
+      "ticker": "CSL",
+      "company_name": "CSL Limited",
+      "sector": "Health Care",
+      "market_cap": "$124B",
+      "reporting_hub": "https://www.csl.com/sustainability/data-and-reporting-centre/annual-publications",
+      "note": "CSL integrates sustainability data within Annual Report; no separate Excel databook published",
+      "reports": [
+        {
+          "title": "2024 Annual Report (includes sustainability)",
+          "url": "https://www.csl.com/-/media/shared/documents/annual-report/csl-annual-report-2024.pdf",
+          "year": "2024",
+          "type": "pdf",
+          "category": "annual"
+        },
+        {
+          "title": "2023 Annual Report (includes sustainability)",
+          "url": "https://www.csl.com/-/media/shared/documents/annual-report/csl-annual-report-2023.pdf",
+          "year": "2023",
+          "type": "pdf",
+          "category": "annual"
+        },
+        {
+          "title": "2022 Annual Report (includes sustainability)",
+          "url": "https://www.csl.com/-/media/shared/documents/annual-report/csl-annual-report-2022.pdf",
+          "year": "2022",
+          "type": "pdf",
+          "category": "annual"
+        }
+      ]
+    },
+    "WBC": {
+      "ticker": "WBC",
+      "company_name": "Westpac Banking Corp",
+      "sector": "Financials",
+      "market_cap": "$119B",
+      "reporting_hub": "https://www.westpac.com.au/about-westpac/sustainability/performance-reports/",
+      "reports": [
+        {
+          "title": "2025 Sustainability Index and Datasheet",
+          "url": "https://www.westpac.com.au/content/dam/public/wbc/documents/pdf/aw/sustainability/2025-sustainability-index-and-datasheet.xlsx",
+          "year": "2025",
+          "type": "xlsx",
+          "category": "databook"
+        },
+        {
+          "title": "2024 Sustainability Index and Datasheet",
+          "url": "https://www.westpac.com.au/content/dam/public/wbc/documents/pdf/aw/sustainability/2024-sustainability-index-and-datasheet.xlsx",
+          "year": "2024",
+          "type": "xlsx",
+          "category": "databook"
+        },
+        {
+          "title": "2023 Sustainability Index and Datasheet",
+          "url": "https://www.westpac.com.au/content/dam/public/wbc/documents/pdf/aw/ic/Westpac-2023-Sustainability-Index-and-Datasheet.xlsx",
+          "year": "2023",
+          "type": "xlsx",
+          "category": "databook"
+        },
+        {
+          "title": "2022 Sustainability Index and Datasheet",
+          "url": "https://www.westpac.com.au/content/dam/public/wbc/documents/pdf/aw/sustainability/2022-sustainability-index-and-datasheet.xlsx",
+          "year": "2022",
+          "type": "xlsx",
+          "category": "databook"
+        },
+        {
+          "title": "2024 Climate Report",
+          "url": "https://www.westpac.com.au/content/dam/public/wbc/documents/pdf/aw/sustainability/wbc-climate-report-2024.pdf",
+          "year": "2024",
+          "type": "pdf",
+          "category": "climate"
+        },
+        {
+          "title": "2023 Climate Report",
+          "url": "https://www.westpac.com.au/content/dam/public/wbc/documents/pdf/aw/sustainability/wbc-2023-climate-report.pdf",
+          "year": "2023",
+          "type": "pdf",
+          "category": "climate"
+        }
+      ]
+    },
+    "ANZ": {
+      "ticker": "ANZ",
+      "company_name": "ANZ Group Holdings Limited",
+      "sector": "Financials",
+      "market_cap": "$93B",
+      "reporting_hub": "https://www.anz.com.au/about-us/esg/reporting/",
+      "reports": [
+        {
+          "title": "2024 ESG Data and Frameworks Pack",
+          "url": "https://www.anz.com.au/content/dam/anzcomau/about-us/anz-2024-esg-data-and-frameworks-pack.xlsx",
+          "year": "2024",
+          "type": "xlsx",
+          "category": "databook"
+        },
+        {
+          "title": "2023 ESG Data and Frameworks Pack",
+          "url": "https://www.anz.com.au/content/dam/anzcomau/about-us/anz-2023-esg-data-and-frameworks-pack.xlsx",
+          "year": "2023",
+          "type": "xlsx",
+          "category": "databook"
+        },
+        {
+          "title": "2024 Climate-related Financial Disclosures",
+          "url": "https://www.anz.com.au/content/dam/anzcomau/about-us/anz-2024-climate-related-financial-disclosures.pdf",
+          "year": "2024",
+          "type": "pdf",
+          "category": "climate"
+        },
+        {
+          "title": "2023 Climate-related Financial Disclosures",
+          "url": "https://www.anz.com.au/content/dam/anzcomau/about-us/anz-2023-climate-related-financial-disclosures.pdf",
+          "year": "2023",
+          "type": "pdf",
+          "category": "climate"
+        },
+        {
+          "title": "2024 ESG Supplement",
+          "url": "https://www.anz.com.au/content/dam/anzcomau/about-us/anz-2024-esg-supplement.pdf",
+          "year": "2024",
+          "type": "pdf",
+          "category": "sustainability"
+        },
+        {
+          "title": "2023 ESG Supplement",
+          "url": "https://www.anz.com.au/content/dam/anzcomau/about-us/anz-2023-esg-supplement.pdf",
+          "year": "2023",
+          "type": "pdf",
+          "category": "sustainability"
+        }
+      ]
+    },
+    "MQG": {
+      "ticker": "MQG",
+      "company_name": "Macquarie Group Limited",
+      "sector": "Financials",
+      "market_cap": "$90B",
+      "reporting_hub": "https://www.macquarie.com/au/en/about/company/environmental-social-and-governance.html",
+      "note": "Macquarie publishes ESG reports (PDF) but no separate Excel databooks",
+      "reports": [
+        {
+          "title": "FY2025 Sustainability Report",
+          "url": "https://www.macquarie.com/assets/macq/about/company/sustainability/macquarie-group-fy25-sustainability-report.pdf",
+          "year": "2025",
+          "type": "pdf",
+          "category": "sustainability"
+        },
+        {
+          "title": "FY2024 ESG Report",
+          "url": "https://www.macquarie.com/assets/macq/about/esg/policies/macquarie-group-fy24-esg.pdf",
+          "year": "2024",
+          "type": "pdf",
+          "category": "sustainability"
+        },
+        {
+          "title": "FY2023 ESG Report",
+          "url": "https://www.macquarie.com/assets/macq/impact/esg/policies/2023/macquarie-group-fy23-esg.pdf",
+          "year": "2023",
+          "type": "pdf",
+          "category": "sustainability"
+        },
+        {
+          "title": "FY2024 Annual Report",
+          "url": "https://www.macquarie.com/assets/macq/investor/reports/2024/macquarie-group-fy24-annual-report.pdf",
+          "year": "2024",
+          "type": "pdf",
+          "category": "annual"
+        },
+        {
+          "title": "FY2023 Annual Report",
+          "url": "https://www.macquarie.com/assets/macq/investor/reports/2023/macquarie-group-fy23-annual-report.pdf",
+          "year": "2023",
+          "type": "pdf",
+          "category": "annual"
+        }
+      ]
+    },
+    "WES": {
+      "ticker": "WES",
+      "company_name": "Wesfarmers Limited",
+      "sector": "Consumer Discretionary",
+      "market_cap": "$89B",
+      "reporting_hub": "https://www.wesfarmers.com.au/sustainability/fy2024/our-reporting",
+      "note": "Wesfarmers Sustainability Databook available online (interactive) at sustainability hub",
+      "reports": [
+        {
+          "title": "2024 Annual Report",
+          "url": "https://www.wesfarmers.com.au/docs/default-source/reports/2024-wesfarmers-annual-report---interactive.pdf",
+          "year": "2024",
+          "type": "pdf",
+          "category": "annual"
+        },
+        {
+          "title": "2024 TCFD Climate Disclosures Extract",
+          "url": "https://www.wesfarmers.com.au/docs/default-source/sustainability/sustainability-2024/2024-08-28-2024-annual-report---tcfd-extract.pdf",
+          "year": "2024",
+          "type": "pdf",
+          "category": "climate"
+        },
+        {
+          "title": "2023 Annual Report",
+          "url": "https://www.wesfarmers.com.au/docs/default-source/reports/2023-wesfarmers-annual-report.pdf",
+          "year": "2023",
+          "type": "pdf",
+          "category": "annual"
+        },
+        {
+          "title": "2022 Annual Report",
+          "url": "https://www.wesfarmers.com.au/docs/default-source/reports/2022-wesfarmers-annual-report.pdf",
+          "year": "2022",
+          "type": "pdf",
+          "category": "annual"
+        }
+      ],
+      "sustainability_databook_urls": {
+        "2024": "https://www.wesfarmers.com.au/sustainability/fy2024/our-data",
+        "2023": "https://www.wesfarmers.com.au/sustainability/fy2023/our-data"
+      }
+    },
+    "GMG": {
+      "ticker": "GMG",
+      "company_name": "Goodman Group",
+      "sector": "Real Estate",
+      "market_cap": "$68B",
+      "reporting_hub": "https://www.goodman.com/sustainability/reports",
+      "note": "Goodman publishes PDF sustainability reports; no separate Excel databook",
+      "reports": [
+        {
+          "title": "2024 Annual Report",
+          "url": "https://www.goodman.com/-/media/project/goodman/global/files/investor-centre/gmg-goodman-group/announcements/asx-announcements/2024/goodman-2024-annual-report.pdf",
+          "year": "2024",
+          "type": "pdf",
+          "category": "annual"
+        },
+        {
+          "title": "2024 Sustainability Report",
+          "url": "https://2024sustainabilityreport.goodman.com/",
+          "year": "2024",
+          "type": "web",
+          "category": "sustainability"
+        },
+        {
+          "title": "2023 Sustainability Report",
+          "url": "https://2023sustainabilityreport.goodman.com/wp-content/uploads/2023/09/Goodman-Group-2023-Sustainability-Report_Original.pdf",
+          "year": "2023",
+          "type": "pdf",
+          "category": "sustainability"
+        },
+        {
+          "title": "2023 Annual Report",
+          "url": "https://www.goodman.com/-/media/project/goodman/global/files/investor-centre/gmg-goodman-group/announcements/asx-announcements/2023/goodman-group-annual-report-2023.pdf",
+          "year": "2023",
+          "type": "pdf",
+          "category": "annual"
+        }
+      ]
+    },
+    "FMG": {
+      "ticker": "FMG",
+      "company_name": "Fortescue Ltd",
+      "sector": "Materials",
+      "market_cap": "$60B",
+      "reporting_hub": "https://www.fortescue.com/en/sustainability",
+      "reports": [
+        {
+          "title": "FY25 ESG Databook",
+          "url": "https://cdn.fortescue.com/docs/default-source/sustainability-publications/fy25-esg-databook.xlsx",
+          "year": "2025",
+          "type": "xlsx",
+          "category": "databook"
+        },
+        {
+          "title": "FY24 ESG Databook",
+          "url": "https://cdn.fortescue.com/docs/default-source/sustainability-publications/fy24-esg-databook.xlsx",
+          "year": "2024",
+          "type": "xlsx",
+          "category": "databook"
+        },
+        {
+          "title": "FY25 Climate Transition Plan",
+          "url": "https://cdn.fortescue.com/docs/default-source/sustainability-publications/fy25-climate-transition-plan.pdf",
+          "year": "2025",
+          "type": "pdf",
+          "category": "climate"
+        },
+        {
+          "title": "FY24 Sustainability Report",
+          "url": "https://cdn.fortescue.com/docs/default-source/announcements-and-reports/fy24-sustainability-report.pdf",
+          "year": "2024",
+          "type": "pdf",
+          "category": "sustainability"
+        },
+        {
+          "title": "FY24 Annual Report",
+          "url": "https://cdn.fortescue.com/docs/default-source/uncategorised/fy24-annual-report.pdf",
+          "year": "2024",
+          "type": "pdf",
+          "category": "annual"
+        },
+        {
+          "title": "FY23 Annual Report",
+          "url": "https://cdn.fortescue.com/docs/default-source/announcements-and-reports/fy23-annual-report.pdf",
+          "year": "2023",
+          "type": "pdf",
+          "category": "annual"
+        },
+        {
+          "title": "FY22 Climate Change Report",
+          "url": "https://cdn.fortescue.com/docs/default-source/announcements-and-reports/2427072-fy22-climate-change-report.pdf",
+          "year": "2022",
+          "type": "pdf",
+          "category": "climate"
+        }
+      ]
+    }
+  },
+  "summary": {
+    "total_companies": 10,
+    "years_covered": ["2022", "2023", "2024", "2025"],
+    "companies_with_excel_databooks": ["CBA", "BHP", "NAB", "WBC", "ANZ", "FMG"],
+    "companies_pdf_only": ["CSL", "MQG", "WES", "GMG"],
+    "total_excel_databooks": 22,
+    "total_pdf_reports": 35,
+    "key_metrics_in_databooks": [
+      "Scope 1 emissions (tCO2e)",
+      "Scope 2 emissions (tCO2e)", 
+      "Scope 3 emissions (tCO2e)",
+      "Renewable energy %",
+      "Energy consumption (GJ)",
+      "Net zero targets and progress",
+      "Financed emissions (for banks)"
+    ]
+  },
+  "next_steps": {
+    "1": "Download Excel databooks for the 6 companies that have them",
+    "2": "Extract key metrics: Scope 1/2/3, renewable %, targets",
+    "3": "For PDF-only companies (CSL, MQG, WES, GMG), use Docling to extract tables",
+    "4": "Run AI analysis to extract structured data from PDFs",
+    "5": "Build comparison dashboard: target vs actual"
+  }
+}

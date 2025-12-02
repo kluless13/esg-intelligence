@@ -2,6 +2,27 @@
 
 AI-powered system to discover, extract, and analyze ESG/sustainability data from ASX companies. Identifies high-priority renewable energy sales prospects using Claude AI.
 
+## Goal (Simplified)
+
+Collect ESG documents by leveraging ListCorp → Corporate Governance links to jump directly into each company's governance/ESG section, then crawl from there (sitemap first, then bounded BFS).
+
+Target files: PDF sustainability/annual/climate reports and Excel ESG databooks for the most recent 3 years.
+
+### Usage
+
+```bash
+# Single company
+python scripts/02b_find_via_website.py --ticker VAU
+
+# Batch (e.g., top 50 by market cap)
+python scripts/02b_find_via_website.py --limit 50
+
+# All companies (no ticker/limit)
+python scripts/02b_find_via_website.py
+```
+
+Note: DuckDuckGo search fallback is optional and disabled by default.
+
 ## Project Status
 
 | Milestone | Status | Description |

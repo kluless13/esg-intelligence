@@ -21,13 +21,28 @@ import datetime
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# ESG-related keywords for URL filtering
+# Environmental/Climate keywords for URL filtering
+# Focus: Renewable energy, emissions (Scope 1-3), fossil fuel use, climate metrics
+# Excluded: Social, governance, community aspects
 ESG_KEYWORDS = [
-    'sustainability', 'esg', 'climate', 'environment', 'carbon',
-    'emissions', 'tcfd', 'annual-report', 'governance', 'net-zero',
-    'renewable', 'ghg', 'scope', 'responsibility', 'impact',
-    'community', 'social', 'disclosure', 'gri', 'cdp',
-    'investor', 'investors', 'reports', 'reporting'
+    # Core environmental/climate
+    'climate', 'environment', 'environmental', 'carbon', 'emissions',
+    'tcfd', 'net-zero', 'renewable', 'ghg', 'scope', 'energy',
+
+    # Renewable energy specific
+    'renewable-energy', 'solar', 'wind', 'clean-energy', 'green-energy',
+    'power-purchase', 'ppa', 're100',
+
+    # Emissions & fossil fuels
+    'scope-1', 'scope-2', 'scope-3', 'carbon-footprint', 'decarboni',
+    'fossil-fuel', 'natural-gas', 'coal', 'oil',
+
+    # Reporting standards (environmental only)
+    'cdp', 'gri', 'sustainability', 'esg-data', 'environmental-data',
+
+    # Reports that might contain climate data
+    'annual-report', 'sustainability-report', 'climate-report',
+    'investor', 'investors', 'reports', 'reporting', 'disclosures'
 ]
 
 # Common paths to check if no sitemap
@@ -566,14 +581,15 @@ def filter_esg_urls(urls: List[str]) -> List[str]:
     return esg_urls
 
 
-def extract_report_links(url: str, base_domain: str = None, enable_js_downloads: bool = False) -> List[Dict[str, str]]:
+def extract_report_links(url: str, base_domain: str = None, enable_js_downloads: bool = True) -> List[Dict[str, str]]:
     """
     Extract PDF/XLSX report links from a webpage.
+    Now aggressively finds JS-driven downloads, buttons, and embedded links.
 
     Args:
         url: URL of page to scrape
         base_domain: Base domain to check (e.g., "xero.com") - allows subdomains
-        enable_js_downloads: When True, attempt simple JS-driven download discovery
+        enable_js_downloads: When True (default), attempt JS-driven download discovery
 
     Returns:
         List of dicts with 'url', 'title', 'type' keys
@@ -587,31 +603,86 @@ def extract_report_links(url: str, base_domain: str = None, enable_js_downloads:
             page = browser.new_page()
             page.goto(url, wait_until='domcontentloaded', timeout=15000)
 
-            # Optional small wait for dynamic content
+            # Wait for dynamic content and scroll to trigger lazy loading
             try:
                 page.wait_for_load_state('networkidle', timeout=3000)
+                # Scroll down to trigger any lazy-loaded content
+                page.evaluate("window.scrollBy(0, document.body.scrollHeight / 2)")
+                page.wait_for_timeout(500)
             except Exception:
                 pass
 
             content = page.content()
             soup = BeautifulSoup(content, 'html.parser')
 
-            # Minimal JS-download discovery (optional)
+            # ENHANCED: Aggressive JS-download discovery (now enabled by default)
             if enable_js_downloads:
-                # Heuristic: look for anchors/buttons with download wording and hrefs with file params
-                candidates = soup.find_all(['a', 'button'])
+                # Look for ALL interactive elements: a, button, div, span with download indicators
+                download_keywords = [
+                    'download', 'pdf', 'excel', 'report', 'databook', 'data sheet',
+                    'sustainability report', 'climate report', 'emissions data',
+                    'view report', 'read report', 'annual report', 'tcfd'
+                ]
+
+                # Search all potentially clickable elements
+                candidates = soup.find_all(['a', 'button', 'div', 'span'], href=True)
+                candidates += soup.find_all(['button', 'div', 'span'], attrs={
+                    'data-href': True,
+                    'data-url': True,
+                    'data-file': True,
+                    'data-download': True,
+                    'onclick': True
+                })
+
                 for cand in candidates:
                     text = cand.get_text(strip=True).lower()
-                    href = cand.get('href') or cand.get('data-href') or ''
-                    if any(w in text for w in ['download', 'pdf', 'report']) and href:
+
+                    # Check if text contains download-related keywords
+                    has_download_keyword = any(kw in text for kw in download_keywords)
+                    if not has_download_keyword:
+                        continue
+
+                    # Try multiple attribute sources for the URL
+                    href = (cand.get('href') or
+                           cand.get('data-href') or
+                           cand.get('data-url') or
+                           cand.get('data-file') or
+                           cand.get('data-download') or '')
+
+                    # Also check onclick for URLs
+                    onclick = cand.get('onclick', '')
+                    if not href and onclick:
+                        # Extract URL from onclick="window.open('url')" or location.href='url'
+                        import re
+                        match = re.search(r'["\']([^"\']*\.(?:pdf|xlsx?|xlsm|csv))["\']', onclick, re.IGNORECASE)
+                        if match:
+                            href = match.group(1)
+
+                    if href:
                         # Normalize URL
                         js_url = urljoin(url, href)
-                        # If query contains file=.pdf/.xlsx, treat accordingly
-                        if ('file=' in js_url.lower() or 'document=' in js_url.lower()) and ('.pdf' in js_url.lower() or '.xlsx' in js_url.lower() or '.xls' in js_url.lower()):
+                        url_lower = js_url.lower()
+
+                        # Check if it's a document
+                        doc_exts = ['.pdf', '.xlsx', '.xls', '.xlsm', '.csv', '.ods']
+                        has_ext = any(ext in url_lower for ext in doc_exts)
+                        has_query_doc = ('file=' in url_lower or 'document=' in url_lower or 'download=' in url_lower)
+
+                        if has_ext or has_query_doc:
+                            # Determine type
+                            if '.pdf' in url_lower:
+                                doc_type = 'pdf'
+                            elif any(ext in url_lower for ext in ['.xlsx', '.xls', '.xlsm']):
+                                doc_type = 'excel'
+                            elif '.csv' in url_lower:
+                                doc_type = 'csv'
+                            else:
+                                doc_type = 'other'
+
                             reports.append({
                                 'url': js_url,
-                                'title': text.title() or 'Download',
-                                'type': 'pdf' if '.pdf' in js_url.lower() else ('excel' if any(ext in js_url.lower() for ext in ['.xlsx', '.xls']) else 'other')
+                                'title': text.strip()[:200] or 'Download',  # Truncate long titles
+                                'type': doc_type
                             })
 
             browser.close()
@@ -678,11 +749,46 @@ def extract_report_links(url: str, base_domain: str = None, enable_js_downloads:
     except Exception as e:
         logger.debug(f"  Error extracting links from {url}: {e}")
 
+    # FILTER: Focus on environmental/climate documents only (exclude social/governance)
+    environmental_keywords = [
+        'climate', 'carbon', 'emissions', 'scope', 'ghg', 'tcfd', 'renewable',
+        'energy', 'fossil', 'net-zero', 'decarboni', 'environmental', 'cdp',
+        'sustainability', 'esg data', 'annual report'  # Keep these as they often contain climate data
+    ]
+
+    social_governance_only_keywords = [
+        'diversity', 'equity', 'inclusion', 'dei', 'gender', 'indigenous',
+        'reconciliation', 'modern slavery', 'human rights', 'community',
+        'workplace', 'safety', 'whs', 'code of conduct', 'anti-bribery',
+        'anti-corruption', 'political contribution', 'sanctions', 'patriot act',
+        'financial crime', 'stewardship', 'governance statement', 'board',
+        'charter', 'policy committee', 'vulnerability'
+    ]
+
+    filtered_reports = []
+    for report in reports:
+        title_lower = report['title'].lower()
+        url_lower = report['url'].lower()
+        combined = title_lower + ' ' + url_lower
+
+        # If it has environmental keywords, include it
+        has_environmental = any(kw in combined for kw in environmental_keywords)
+
+        # If it ONLY has social/governance keywords (no environmental), exclude it
+        has_social_only = any(kw in combined for kw in social_governance_only_keywords)
+        is_social_only = has_social_only and not has_environmental
+
+        if not is_social_only:
+            filtered_reports.append(report)
+        else:
+            filtered_out.append({'reason': 'social_governance_only', 'title': report['title'][:50]})
+
     # Always log a summary of filtered-out samples for debugging (even if zero)
     sample = filtered_out[:5]
     logger.debug(f"  Filtered-out examples ({len(filtered_out)}): {sample}")
+    logger.debug(f"  Environmental filter: {len(reports)} -> {len(filtered_reports)} reports")
 
-    return reports
+    return filtered_reports
 
 
 def find_esg_reports(
@@ -749,6 +855,22 @@ def find_esg_reports(
         urls = (urls or []) + crawl_urls
         # Re-filter after crawling
         esg_urls = filter_esg_urls(urls)
+
+        # EARLY governance/investor seeding via ListCorp before on-site inspection
+        if len(esg_urls) == 0:
+            logger.info("Trying governance/investor seeding from ListCorp before on-site inspection...")
+            company_slug = company_name.lower().replace(' ', '-').replace('limited', '').replace('ltd', '').strip('-')
+            portal_links = get_company_portals_from_listcorp(ticker, company_slug)
+            if portal_links:
+                # Build allowed domains from current domain + any domains found in portal links
+                allowed_domains = {domain}
+                for link in portal_links:
+                    parsed = urlparse(link)
+                    if parsed.netloc:
+                        allowed_domains.add(parsed.netloc.replace('www.', ''))
+                bfs_urls = discover_urls_bfs(domain, portal_links, max_pages=100, allowed_domains=allowed_domains)
+                urls = list(dict.fromkeys((urls or []) + bfs_urls))
+                esg_urls = filter_esg_urls(urls)
 
         # On-site inspection fallback
         if fallback_inspect and len(esg_urls) == 0:

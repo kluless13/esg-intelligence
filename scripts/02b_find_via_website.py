@@ -200,7 +200,7 @@ def main():
     parser.add_argument('--site-search-queries', type=str, default='sustainability,esg',
                         help='Comma-separated queries for on-site search fallback')
     parser.add_argument('--fallback-search', action='store_true',
-                        help='Enable DuckDuckGo search fallback (last 5 years)')
+                        help='Enable DuckDuckGo search fallback (disabled by default)')
     parser.add_argument('--search-years', type=str, default='',
                         help='Comma-separated years (e.g., 2025,2024,2023,2022,2021)')
     parser.add_argument('--bfs-max-pages', type=int, default=100,
